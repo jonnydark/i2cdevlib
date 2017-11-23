@@ -47,7 +47,7 @@ int8_t I2Cdev::readBit(uint8_t devAddr, uint8_t regAddr, uint8_t bitNum, uint8_t
     int b;
     uint8_t status = i2c_readByte(I2C_DEFAULT_ADAPTER, devAddr, regAddr, &b);
     *data = (uint8_t)b & (1 << bitNum);
-    return status;
+    return status == EXIT_SUCCESS;
 }
 
 
@@ -64,7 +64,7 @@ int8_t I2Cdev::readBitW(uint8_t devAddr, uint8_t regAddr, uint8_t bitNum, uint16
     uint8_t status = i2c_read(I2C_DEFAULT_ADAPTER, devAddr, regAddr, b, 2);
     uint16_t bCombined = (b[0] << 8) | b[1];
     *data = bCombined & (1 << bitNum);
-    return status;
+    return status == EXIT_SUCCESS;
 }
 
 /** Read multiple bits from an 8-bit device register.
@@ -78,14 +78,14 @@ int8_t I2Cdev::readBitW(uint8_t devAddr, uint8_t regAddr, uint8_t bitNum, uint16
 int8_t I2Cdev::readBits(uint8_t devAddr, uint8_t regAddr, uint8_t bitStart, uint8_t length, uint8_t *data) {
     uint8_t status;
     int byte;
-    if ((status = i2c_readByte(I2C_DEFAULT_ADAPTER, devAddr, regAddr, &byte)) != 0) {
+    if ((status = i2c_readByte(I2C_DEFAULT_ADAPTER, devAddr, regAddr, &byte)) == EXIT_SUCCESS) {
         uint8_t mask = ((1 << length) - 1) << (bitStart - length + 1);
         uint8_t b = byte;
         b &= mask;
         b >>= (bitStart - length + 1);
         *data = b;
     }
-    return status;
+    return status == EXIT_SUCCESS;
 }
 
 /** Read single byte from an 8-bit device register.
@@ -98,7 +98,7 @@ int8_t I2Cdev::readByte(uint8_t devAddr, uint8_t regAddr, uint8_t *data) {
     int b;
     int status = i2c_readByte(I2C_DEFAULT_ADAPTER, devAddr, regAddr, &b);
     *data = (uint8_t)b;
-    return status;
+    return status == EXIT_SUCCESS;
 }
 
 /** Read multiple bytes from an 8-bit device register.
@@ -151,7 +151,7 @@ bool I2Cdev::writeBits(uint8_t devAddr, uint8_t regAddr, uint8_t bitStart, uint8
         data &= mask; // zero all non-important bits in data
         b &= ~(mask); // zero all important bits in existing byte
         b |= data; // combine data with existing byte
-        return i2c_write(I2C_DEFAULT_ADAPTER, devAddr, regAddr, b);
+        return i2c_write(I2C_DEFAULT_ADAPTER, devAddr, regAddr, b) == EXIT_SUCCESS;
     } else {
         return false;
     }
@@ -164,7 +164,7 @@ bool I2Cdev::writeBits(uint8_t devAddr, uint8_t regAddr, uint8_t bitStart, uint8
  * @return Status of operation (true = success)
  */
 bool I2Cdev::writeByte(uint8_t devAddr, uint8_t regAddr, uint8_t data) {
-    return i2c_write(I2C_DEFAULT_ADAPTER, devAddr, regAddr, (int)data);
+    return i2c_write(I2C_DEFAULT_ADAPTER, devAddr, regAddr, (int)data) == EXIT_SUCCESS;
 }
 
 /** Read single word from a 16-bit device register.
@@ -190,15 +190,15 @@ int8_t I2Cdev::readWords(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint1
     for (uint8_t i = 0; i < length; i++) {
         data[i] = (b[i*2] << 8) | b[i*2 + 1];
     }
-    return status;
+    return status == EXIT_SUCCESS;
 }
 
 bool I2Cdev::writeWord(uint8_t devAddr, uint8_t regAddr, uint16_t data){
     return writeWords(devAddr, regAddr, 1, &data);
 }
 
-bool I2Cdev::writeBytes(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t *data){
-    return i2c_writeBuffer(I2C_DEFAULT_ADAPTER, devAddr, regAddr, data, length);
+bool I2Cdev::writeBytes(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t *data) {
+    return i2c_writeBuffer(I2C_DEFAULT_ADAPTER, devAddr, regAddr, data, length) == EXIT_SUCCESS;
 }
 
 bool I2Cdev::writeWords(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint16_t *data){
@@ -207,5 +207,5 @@ bool I2Cdev::writeWords(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint16
         buffer[i*2] = (uint8_t) (data[i] >> 8); // MSByte
         buffer[i*2 + 1] = (uint8_t) (data[i] >> 0); // LSByte
     }
-    return i2c_writeBuffer(I2C_DEFAULT_ADAPTER, devAddr, regAddr, buffer, length);
+    return i2c_writeBuffer(I2C_DEFAULT_ADAPTER, devAddr, regAddr, buffer, length) == EXIT_SUCCESS;
 }
